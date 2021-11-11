@@ -32,7 +32,7 @@ func (t *Test) Run() error {
 		return err
 	}
 	req.Header.Set("Cache-Control", "no-store, max-age=0")
-	req.Header.Set("User-Agent", "uptime bot/"+version+" (+https://github.com/CHTJonas/uptime)")
+	req.Header.Set("User-Agent", "uptime-mon bot/"+version+" (+https://github.com/CHTJonas/uptime-mon)")
 
 	start := time.Now()
 	client := &http.Client{
@@ -109,8 +109,8 @@ func main() {
 func readConfig() {
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
-	viper.AddConfigPath("/etc/uptime/")
-	viper.AddConfigPath("$HOME/.config/uptime/")
+	viper.AddConfigPath("/etc/uptime-mon/")
+	viper.AddConfigPath("$HOME/.config/uptime-mon/")
 	viper.AddConfigPath(".")
 	if err := viper.ReadInConfig(); err != nil {
 		fmt.Println("Failed to read config file:", err)

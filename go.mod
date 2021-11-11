@@ -1,4 +1,4 @@
-module github.com/CHTJonas/uptime
+module github.com/CHTJonas/uptime-mon
 
 go 1.17
 
