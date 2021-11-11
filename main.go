@@ -31,7 +31,11 @@ func (t *Test) Run() error {
 	req.Header.Set("User-Agent", "uptime bot/"+version+" (+https://github.com/CHTJonas/uptime)")
 
 	start := time.Now()
-	client := &http.Client{}
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return err
