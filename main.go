@@ -9,11 +9,15 @@ import (
 	"regexp"
 	"syscall"
 	"time"
+
+	"github.com/spf13/viper"
 )
 
 var version = "dev"
+var testArr []*Test
 
 type Test struct {
+	Name            string
 	URL             string
 	Method          string
 	MaxResponseTime int
@@ -77,35 +81,64 @@ func (t *Test) Run() error {
 }
 
 func main() {
-	site := &Test{
-		URL:             "https://charliejonas.co.uk/",
-		Method:          "GET",
-		MaxResponseTime: 5000,
-		StatusCode:      200,
-		HeaderRegexps: map[string]string{
-			"Server": "2.4.29",
-		},
-		ContentRegexp: "he/him",
+	readConfig()
+	initTestArr()
+
+	offset := float64(30) / float64(len(testArr))
+	duration := time.Duration(offset * float64(time.Second))
+	for _, test := range testArr {
+		go func(t *Test) {
+			for range time.Tick(30 * time.Second) {
+				err := t.Run()
+				if err != nil {
+					fmt.Println(t.Name, "test failed:", err)
+				} else {
+					fmt.Println(t.Name, "test success!")
+				}
+			}
+		}(test)
+		time.Sleep(duration)
 	}
 
-	ticker := time.NewTicker(1 * time.Minute)
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, syscall.SIGINT)
-	signal.Notify(stop, syscall.SIGTERM)
-	for {
-		select {
-		case <-ticker.C:
-			go func() {
-				err := site.Run()
-				if err != nil {
-					fmt.Println("test failed:", err)
-				} else {
-					fmt.Println("test success!")
-				}
-			}()
-		case <-stop:
-			ticker.Stop()
-			return
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT)
+	signal.Notify(quit, syscall.SIGTERM)
+	<-quit
+}
+
+func readConfig() {
+	viper.SetConfigName("config")
+	viper.SetConfigType("yaml")
+	viper.AddConfigPath("/etc/uptime/")
+	viper.AddConfigPath("$HOME/.config/uptime/")
+	viper.AddConfigPath(".")
+	if err := viper.ReadInConfig(); err != nil {
+		fmt.Println("Failed to read config file:", err)
+		os.Exit(125)
+	}
+}
+
+func initTestArr() {
+	tests := viper.Get("tests").([]interface{})
+	testArr = make([]*Test, len(tests))
+	for i, t := range tests {
+		test := t.(map[interface{}]interface{})
+		testArr[i] = &Test{
+			Name:            test["Name"].(string),
+			URL:             test["URL"].(string),
+			Method:          test["Method"].(string),
+			MaxResponseTime: test["MaxResponseTime"].(int),
+			StatusCode:      test["StatusCode"].(int),
+		}
+		if test["HeaderRegexps"] != nil {
+			testArr[i].HeaderRegexps = make(map[string]string)
+			for h, rxp := range test["HeaderRegexps"].(map[interface{}]interface{}) {
+				testArr[i].HeaderRegexps[h.(string)] = rxp.(string)
+			}
+		}
+		if test["ContentRegexp"] != nil {
+			testArr[i].ContentRegexp = test["ContentRegexp"].(string)
 		}
 	}
+	fmt.Println("Found", len(tests), "tests in config file")
 }
