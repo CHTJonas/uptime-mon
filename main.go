@@ -91,9 +91,9 @@ func main() {
 			for range time.Tick(30 * time.Second) {
 				err := t.Run()
 				if err != nil {
-					fmt.Println(t.Name, "test failed:", err)
-				} else {
-					fmt.Println(t.Name, "test success!")
+					fmt.Printf("Test failed: %s: %s\n", t.Name, err)
+				} else if version == "dev" {
+					fmt.Printf("Test success: %s\n", t.Name)
 				}
 			}
 		}(test)
