@@ -14,6 +14,13 @@ import (
 var version = "dev"
 var testArr []*Test
 
+func notificationHelper(format string, a ...interface{}) {
+	err := notifyf(format, a...)
+	if err != nil {
+		fmt.Println("error sending notification:", err)
+	}
+}
+
 func main() {
 	readConfig()
 	initTestArr()
@@ -28,9 +35,10 @@ func main() {
 					if strings.Contains(err.Error(), "Client.Timeout") {
 						err = fmt.Errorf("response time was greater than %d milliseconds", t.MaxResponseTime)
 					}
-					fmt.Printf("Test failed: %s: %s\n", t.Name, err)
+					notificationHelper("Test failed: %s: %s\n", t.Name, err)
+
 				} else if version == "dev" {
-					fmt.Printf("Test success: %s\n", t.Name)
+					notificationHelper("Test success: %s\n", t.Name)
 				}
 			}
 		}(test)
