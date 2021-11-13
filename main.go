@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -24,6 +25,9 @@ func main() {
 			for range time.Tick(30 * time.Second) {
 				err := t.Run()
 				if err != nil {
+					if strings.Contains(err.Error(), "Client.Timeout") {
+						err = fmt.Errorf("response time was greater than %d milliseconds", t.MaxResponseTime)
+					}
 					fmt.Printf("Test failed: %s: %s\n", t.Name, err)
 				} else if version == "dev" {
 					fmt.Printf("Test success: %s\n", t.Name)

@@ -26,11 +26,11 @@ func (t *Test) Run() error {
 	req.Header.Set("Cache-Control", "no-store, max-age=0")
 	req.Header.Set("User-Agent", "uptime-mon bot/"+version+" (+https://github.com/CHTJonas/uptime-mon)")
 
-	start := time.Now()
 	client := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
+		Timeout: time.Duration(t.MaxResponseTime) * time.Millisecond,
 	}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -41,11 +41,7 @@ func (t *Test) Run() error {
 	if err != nil {
 		return err
 	}
-	elapsed := time.Since(start)
 
-	if elapsed > time.Duration(t.MaxResponseTime*1000*1000) {
-		return fmt.Errorf("response time %d was greater than %d", elapsed, t.MaxResponseTime)
-	}
 	if resp.StatusCode != t.StatusCode {
 		return fmt.Errorf("status code %d did not match %d", resp.StatusCode, t.StatusCode)
 	}
