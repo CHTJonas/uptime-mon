@@ -18,11 +18,11 @@ func main() {
 	readConfig()
 	initTestArr()
 
-	offset := float64(30) / float64(len(testArr))
+	offset := float64(15) / float64(len(testArr))
 	duration := time.Duration(offset * float64(time.Second))
 	for _, test := range testArr {
 		go func(t *Test) {
-			for range time.Tick(30 * time.Second) {
+			for range time.Tick(15 * time.Second) {
 				err := t.Run()
 				if err != nil {
 					if strings.Contains(err.Error(), "Client.Timeout") {
