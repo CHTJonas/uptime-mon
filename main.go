@@ -17,7 +17,7 @@ var testArr []*Test
 func notificationHelper(format string, a ...interface{}) {
 	err := notifyf(format, a...)
 	if err != nil {
-		fmt.Println("error sending notification:", err)
+		fmt.Println("error sending Slack notification:", err)
 	}
 }
 
@@ -35,10 +35,15 @@ func main() {
 					if strings.Contains(err.Error(), "Client.Timeout") {
 						err = fmt.Errorf("response time was greater than %d milliseconds", t.MaxResponseTime)
 					}
-					notificationHelper("Test failed: %s: %s\n", t.Name, err)
-
+					errStr := fmt.Sprintf("Test failed: %s: %s", t.Name, err)
+					if version == "dev" {
+						fmt.Println(errStr)
+					}
+					if t.HighErrorCount() {
+						notificationHelper(errStr)
+					}
 				} else if version == "dev" {
-					notificationHelper("Test success: %s\n", t.Name)
+					fmt.Println("Test success:", t.Name)
 				}
 			}
 		}(test)
@@ -67,23 +72,7 @@ func initTestArr() {
 	tests := viper.Get("tests").([]interface{})
 	testArr = make([]*Test, len(tests))
 	for i, t := range tests {
-		test := t.(map[interface{}]interface{})
-		testArr[i] = &Test{
-			Name:            test["Name"].(string),
-			URL:             test["URL"].(string),
-			Method:          test["Method"].(string),
-			MaxResponseTime: test["MaxResponseTime"].(int),
-			StatusCode:      test["StatusCode"].(int),
-		}
-		if test["HeaderRegexps"] != nil {
-			testArr[i].HeaderRegexps = make(map[string]string)
-			for h, rxp := range test["HeaderRegexps"].(map[interface{}]interface{}) {
-				testArr[i].HeaderRegexps[h.(string)] = rxp.(string)
-			}
-		}
-		if test["ContentRegexp"] != nil {
-			testArr[i].ContentRegexp = test["ContentRegexp"].(string)
-		}
+		testArr[i] = NewTest(t.(map[interface{}]interface{}))
 	}
 	fmt.Println("Found", len(tests), "tests in config file")
 }
