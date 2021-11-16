@@ -1,8 +1,10 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"regexp"
 	"sync/atomic"
@@ -17,6 +19,7 @@ type Test struct {
 	StatusCode      int
 	HeaderRegexps   map[string]string
 	ContentRegexp   string
+	Network         string
 
 	errCountPtr *uint32
 }
@@ -39,6 +42,9 @@ func NewTest(test map[interface{}]interface{}) *Test {
 	}
 	if test["content-regexp"] != nil {
 		t.ContentRegexp = test["content-regexp"].(string)
+	}
+	if test["network"] != nil {
+		t.Network = test["network"].(string)
 	}
 	return t
 }
@@ -68,12 +74,7 @@ func (t *Test) Run() (err error) {
 	req.Header.Set("Cache-Control", "no-store, max-age=0")
 	req.Header.Set("User-Agent", "uptime-mon bot/"+version+" (+https://github.com/CHTJonas/uptime-mon)")
 
-	client := &http.Client{
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-		Timeout: time.Duration(t.MaxResponseTime) * time.Millisecond,
-	}
+	client := t.getHTTPClient()
 	resp, err := client.Do(req)
 	if err != nil {
 		return err
@@ -108,4 +109,27 @@ func (t *Test) Run() (err error) {
 		return fmt.Errorf("response body did not match %s", t.ContentRegexp)
 	}
 	return nil
+}
+
+func (t *Test) getHTTPClient() *http.Client {
+	dialer := &net.Dialer{
+		KeepAlive: -1,
+	}
+	dialCtx := func(ctx context.Context, network, addr string) (net.Conn, error) {
+		if t.Network != "" {
+			network = t.Network
+		}
+		return dialer.DialContext(ctx, network, addr)
+	}
+	transport := &http.Transport{
+		DisableKeepAlives: true,
+		DialContext:       dialCtx,
+	}
+	return &http.Client{
+		Transport: transport,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+		Timeout: time.Duration(t.MaxResponseTime) * time.Millisecond,
+	}
 }
