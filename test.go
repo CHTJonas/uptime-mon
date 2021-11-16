@@ -54,6 +54,20 @@ func (t *Test) HighErrorCount() bool {
 }
 
 func (t *Test) Run() (err error) {
+	switch t.Network {
+	case "both":
+		for _, networkOverride := range []string{"tcp4", "tcp6"} {
+			if err := t.innerRun(networkOverride); err != nil {
+				return err
+			}
+		}
+		return nil
+	default:
+		return t.innerRun(t.Network)
+	}
+}
+
+func (t *Test) innerRun(networkOverride string) (err error) {
 	defer func() {
 		if err != nil {
 			done := false
@@ -74,7 +88,7 @@ func (t *Test) Run() (err error) {
 	req.Header.Set("Cache-Control", "no-store, max-age=0")
 	req.Header.Set("User-Agent", "uptime-mon bot/"+version+" (+https://github.com/CHTJonas/uptime-mon)")
 
-	client := t.getHTTPClient()
+	client := t.getHTTPClient(networkOverride)
 	resp, err := client.Do(req)
 	if err != nil {
 		return err
@@ -111,13 +125,13 @@ func (t *Test) Run() (err error) {
 	return nil
 }
 
-func (t *Test) getHTTPClient() *http.Client {
+func (t *Test) getHTTPClient(networkOverride string) *http.Client {
 	dialer := &net.Dialer{
 		KeepAlive: -1,
 	}
 	dialCtx := func(ctx context.Context, network, addr string) (net.Conn, error) {
-		if t.Network != "" {
-			network = t.Network
+		if networkOverride != "" {
+			network = networkOverride
 		}
 		return dialer.DialContext(ctx, network, addr)
 	}
