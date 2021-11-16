@@ -2,23 +2,24 @@ package main
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/nlopes/slack"
 )
 
-var slackWebhook string
-
-func init() {
-	slackWebhook = os.Getenv("SLACK_WEBHOOK")
-}
-
 func notify(msg string) error {
-	return slack.PostWebhook(slackWebhook, &slack.WebhookMessage{
+	hookURL := getConfig().slackWebhook
+	return slack.PostWebhook(hookURL, &slack.WebhookMessage{
 		Text: msg,
 	})
 }
 
 func notifyf(format string, a ...interface{}) error {
 	return notify(fmt.Sprintf(format, a...))
+}
+
+func notificationHelper(format string, a ...interface{}) {
+	err := notifyf(format, a...)
+	if err != nil {
+		fmt.Println("error sending Slack notification:", err)
+	}
 }
