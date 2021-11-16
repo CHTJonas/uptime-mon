@@ -24,21 +24,21 @@ type Test struct {
 func NewTest(test map[interface{}]interface{}) *Test {
 	var zero uint32 = 0
 	t := &Test{
-		Name:            test["Name"].(string),
-		URL:             test["URL"].(string),
-		Method:          test["Method"].(string),
-		MaxResponseTime: test["MaxResponseTime"].(int),
-		StatusCode:      test["StatusCode"].(int),
+		Name:            test["name"].(string),
+		URL:             test["url"].(string),
+		Method:          test["method"].(string),
+		MaxResponseTime: test["max-response-time"].(int),
+		StatusCode:      test["status-code"].(int),
 		errCountPtr:     &zero,
 	}
-	if test["HeaderRegexps"] != nil {
+	if test["header-regexps"] != nil {
 		t.HeaderRegexps = make(map[string]string)
-		for h, rxp := range test["HeaderRegexps"].(map[interface{}]interface{}) {
+		for h, rxp := range test["header-regexps"].(map[interface{}]interface{}) {
 			t.HeaderRegexps[h.(string)] = rxp.(string)
 		}
 	}
-	if test["ContentRegexp"] != nil {
-		t.ContentRegexp = test["ContentRegexp"].(string)
+	if test["content-regexp"] != nil {
+		t.ContentRegexp = test["content-regexp"].(string)
 	}
 	return t
 }
