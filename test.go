@@ -22,6 +22,7 @@ type Test struct {
 	Network         string
 
 	errCountPtr *uint32
+	notified    bool
 }
 
 func NewTest(test map[interface{}]interface{}) *Test {
@@ -49,7 +50,7 @@ func NewTest(test map[interface{}]interface{}) *Test {
 	return t
 }
 
-func (t *Test) HighErrorCount() bool {
+func (t *Test) ShouldNotify() bool {
 	return atomic.LoadUint32(t.errCountPtr) >= 3
 }
 

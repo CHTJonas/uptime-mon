@@ -16,10 +16,3 @@ func notify(msg string) error {
 func notifyf(format string, a ...interface{}) error {
 	return notify(fmt.Sprintf(format, a...))
 }
-
-func notificationHelper(format string, a ...interface{}) {
-	err := notifyf(format, a...)
-	if err != nil {
-		fmt.Println("error sending Slack notification:", err)
-	}
-}

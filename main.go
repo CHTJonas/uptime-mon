@@ -48,11 +48,22 @@ func testLoop() {
 				if version == "dev" {
 					fmt.Println(errStr)
 				}
-				if t.HighErrorCount() {
-					notificationHelper(errStr)
+				if t.ShouldNotify() && !t.notified {
+					err := notify(errStr)
+					if err != nil {
+						fmt.Println("error sending Slack notification:", err)
+					} else {
+						t.notified = true
+					}
 				}
-			} else if version == "dev" {
-				fmt.Println("Test success:", t.Name)
+			} else {
+				if version == "dev" {
+					fmt.Println("Test success:", t.Name)
+				}
+				if t.notified {
+					notifyf("Test recovered: %s", t.Name)
+				}
+				t.notified = false
 			}
 		}(c.tests[i])
 		time.Sleep(duration)
