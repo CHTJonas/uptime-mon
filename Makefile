@@ -3,7 +3,7 @@ SHELL := bash
 
 VER=$(shell git describe --tags --always --dirty)
 GO=$(shell which go)
-GOOPTS=-trimpath -mod=readonly -ldflags "-X main.version=$(VER) -s -w -buildid="
+GOOPTS=-trimpath -mod=readonly -ldflags "-X main.version=$(VER:v%=%) -s -w -buildid="
 GOMOD=$(GO) mod
 GOFMT=$(GO) fmt
 GOTEST=$(GO) test $(GOOPTS)

@@ -87,7 +87,7 @@ func (t *Test) innerRun(networkOverride string) (err error) {
 		return err
 	}
 	req.Header.Set("Cache-Control", "no-store, max-age=0")
-	req.Header.Set("User-Agent", "uptime-mon bot/"+version+" (+https://github.com/CHTJonas/uptime-mon)")
+	req.Header.Set("User-Agent", uaString())
 
 	client := t.getHTTPClient(networkOverride)
 	resp, err := client.Do(req)
