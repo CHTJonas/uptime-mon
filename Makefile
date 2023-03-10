@@ -9,10 +9,14 @@ GOFMT=$(GO) fmt
 GOTEST=$(GO) test $(GOOPTS)
 GOBUILD=$(GO) build $(GOOPTS)
 
-all: format build
+all: format build license
 
 clean:
 	@rm -rf bin
+
+license: dir
+	cp NOTICE bin/NOTICE
+	cp LICENSE bin/LICENSE
 
 dir:
 	@if [ ! -d bin ]; then mkdir -p bin; fi
