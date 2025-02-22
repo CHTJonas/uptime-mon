@@ -17,6 +17,7 @@ type Test struct {
 	Method          string
 	MaxResponseTime int
 	StatusCode      int
+	NotifyErrCount  int
 	HeaderRegexps   map[string]string
 	ContentRegexp   string
 	Network         string
@@ -33,6 +34,7 @@ func NewTest(test map[interface{}]interface{}) *Test {
 		Method:          test["method"].(string),
 		MaxResponseTime: test["max-response-time"].(int),
 		StatusCode:      test["status-code"].(int),
+		NotifyErrCount:  test["notify-error-count"].(int),
 		errCountPtr:     &zero,
 	}
 	if test["header-regexps"] != nil {
@@ -51,7 +53,7 @@ func NewTest(test map[interface{}]interface{}) *Test {
 }
 
 func (t *Test) ShouldNotify() bool {
-	return atomic.LoadUint32(t.errCountPtr) >= 3
+	return atomic.LoadUint32(t.errCountPtr) >= uint32(t.NotifyErrCount)
 }
 
 func (t *Test) Run() (err error) {
