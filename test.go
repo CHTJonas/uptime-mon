@@ -22,12 +22,11 @@ type Test struct {
 	ContentRegexp   string
 	Network         string
 
-	errCountPtr *uint32
-	notified    bool
+	errCountPtrMap map[string]*uint32
+	notified       bool
 }
 
 func NewTest(test map[interface{}]interface{}) *Test {
-	var zero uint32 = 0
 	t := &Test{
 		Name:            test["name"].(string),
 		URL:             test["url"].(string),
@@ -35,7 +34,7 @@ func NewTest(test map[interface{}]interface{}) *Test {
 		MaxResponseTime: test["max-response-time"].(int),
 		StatusCode:      test["status-code"].(int),
 		NotifyErrCount:  test["notify-error-count"].(int),
-		errCountPtr:     &zero,
+		errCountPtrMap:  make(map[string]*uint32),
 	}
 	if test["header-regexps"] != nil {
 		t.HeaderRegexps = make(map[string]string)
@@ -53,7 +52,16 @@ func NewTest(test map[interface{}]interface{}) *Test {
 }
 
 func (t *Test) ShouldNotify() bool {
-	return atomic.LoadUint32(t.errCountPtr) >= uint32(t.NotifyErrCount)
+	alertThreshold := uint32(t.NotifyErrCount)
+	for errType, errCountPtr := range t.errCountPtrMap {
+		currentErrorCount := atomic.LoadUint32(errCountPtr)
+		if currentErrorCount >= alertThreshold {
+			debugPrintLn(errType, "error counter", currentErrorCount, "for", t.Name, "is above alert thresholf of", alertThreshold)
+			return true
+		}
+		debugPrintLn(errType, "error counter", currentErrorCount, "for", t.Name, "is below alert thresholf of", alertThreshold)
+	}
+	return false
 }
 
 func (t *Test) Run() (err error) {
@@ -76,17 +84,24 @@ func (t *Test) innerRun(networkOverride string) (err error) {
 	}
 
 	defer func() {
+		errCountPtr, exists := t.errCountPtrMap[networkOverride]
+		if !exists {
+			debugPrintLn("initialising", networkOverride, "error counter for", t.Name)
+			var zero uint32 = 0
+			t.errCountPtrMap[networkOverride] = &zero
+			errCountPtr = &zero
+		}
 		if err != nil {
 			done := false
 			var val uint32
 			for !done {
-				val = atomic.LoadUint32(t.errCountPtr)
-				done = atomic.CompareAndSwapUint32(t.errCountPtr, val, val+1)
+				val = atomic.LoadUint32(errCountPtr)
+				done = atomic.CompareAndSwapUint32(errCountPtr, val, val+1)
 			}
-			debugPrintLn("incremented error count to", val)
+			debugPrintLn("incremented", networkOverride, "error counter for", t.Name, "from", val, "to", val+1)
 		} else {
-			atomic.StoreUint32(t.errCountPtr, 0)
-			debugPrintLn("set error count to 0")
+			atomic.StoreUint32(errCountPtr, 0)
+			debugPrintLn("set", networkOverride, "error counter for", t.Name, "to 0")
 		}
 	}()
 
