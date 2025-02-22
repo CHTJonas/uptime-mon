@@ -16,6 +16,7 @@ type Config struct {
 }
 
 func init() {
+	fmt.Printf("Uptime Monitor %s started\n", version)
 	config = new(atomic.Value)
 	config.Store(loadConfig())
 }

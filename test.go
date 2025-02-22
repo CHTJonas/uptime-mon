@@ -69,6 +69,10 @@ func (t *Test) Run() (err error) {
 }
 
 func (t *Test) innerRun(networkOverride string) (err error) {
+	if networkOverride != "" {
+		debugPrintLn("running test with network override", networkOverride)
+	}
+
 	defer func() {
 		if err != nil {
 			done := false
@@ -77,8 +81,10 @@ func (t *Test) innerRun(networkOverride string) (err error) {
 				val = atomic.LoadUint32(t.errCountPtr)
 				done = atomic.CompareAndSwapUint32(t.errCountPtr, val, val+1)
 			}
+			debugPrintLn("incremented error count to", val)
 		} else {
 			atomic.StoreUint32(t.errCountPtr, 0)
+			debugPrintLn("set error count to 0")
 		}
 	}()
 

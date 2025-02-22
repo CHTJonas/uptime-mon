@@ -45,23 +45,25 @@ func testLoop() {
 					err = fmt.Errorf("response time was greater than %d milliseconds", t.MaxResponseTime)
 				}
 				errStr := fmt.Sprintf("Test failed: %s: %s", t.Name, err)
-				if version == "dev" {
-					fmt.Println(errStr)
-				}
+				debugPrintLn(errStr)
 				if t.ShouldNotify() && !t.notified {
 					err := notify(errStr)
 					if err != nil {
-						fmt.Println("error sending Slack notification:", err)
+						fmt.Println("error sending test failure Slack notification:", err)
 					} else {
+						debugPrintLn("successfully sent test failure Slack notification")
 						t.notified = true
 					}
 				}
 			} else {
-				if version == "dev" {
-					fmt.Println("Test success:", t.Name)
-				}
+				debugPrintLn("Test successful:", t.Name)
 				if t.notified {
-					notifyf("Test recovered: %s", t.Name)
+					err := notifyf("Test recovered: %s", t.Name)
+					if err != nil {
+						fmt.Println("error sending test recovery Slack notification:", err)
+					} else {
+						debugPrintLn("successfully sent test recovery Slack notification")
+					}
 				}
 				t.notified = false
 			}
