@@ -15,6 +15,7 @@ tests:
     url: https://www.google.co.uk/
     method: GET
     max-response-time: 3000
+    notify-error-count: 4
     status-code: 200
     header-regexps:
       Content-Type: text\/html; charset=ISO-8859-1
